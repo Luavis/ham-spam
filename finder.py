@@ -3,6 +3,7 @@
 
 import re
 import sqlite3
+from polyglot.text import Text
 
 conn = sqlite3.connect('save.db')
 
@@ -16,12 +17,12 @@ def load_txt_and_save():
   spam_word = dict()
   ham_word = dict()
 
-  index = 0;
+  index = 0
 
-  for line in txt.split("\r\n"):
+  for line in txt.split("\n"):
     index += 1
     line_split = line.split("\t")
-    
+
     if not len(line_split) == 2:
       print("Pass Index " + str(index) + "\n")
       continue
@@ -36,21 +37,26 @@ def load_txt_and_save():
     else:
       continue
 
-    for c in re.split('\s+', replace_mark(line_split[1])):
-      if not len(c) == 0:
-        if target.get(c) == None:
-          target[c] = 1
-        else:
-          target[c] += 1;
-  
+    texts = Text(replace_mark(line_split[1]))
+
+    try:
+        for word, tag in texts.pos_tags:
+          if not len(word) == 0 and (tag == 'VERB' or tag == 'ADJ'):
+            if target.get(word) == None:
+              target[word] = {'cnt': 1, 'tag': tag}
+            else:
+              target[word]['cnt'] += 1
+    except:
+        pass
+
   c = conn.cursor()
 
   for word in ham_word:
-    count = ham_word[word]
+    count = ham_word[word]['cnt']
     c.execute("insert into ham_word (word, word_count) values('" + word + "', " + str(count) + ")");
 
   for word in spam_word:
-    count = spam_word[word]
+    count = spam_word[word]['cnt']
     c.execute("insert into spam_word (word, word_count) values('" + word + "', " + str(count) + ")");
 
   conn.commit()
@@ -74,7 +80,7 @@ def write_db():
 
   ham_word_list.close()
 
-
+load_txt_and_save();
 write_db()
 
 conn.close()
