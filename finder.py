@@ -43,21 +43,23 @@ def load_txt_and_save():
         for word, tag in texts.pos_tags:
           if not len(word) == 0 and (tag == 'VERB' or tag == 'ADJ'):
             if target.get(word) == None:
-              target[word] = {'cnt': 1, 'tag': tag}
+              target[word] = 1
             else:
-              target[word]['cnt'] += 1
+              target[word] += 1
     except:
         pass
 
   c = conn.cursor()
 
   for word in ham_word:
-    count = ham_word[word]['cnt']
-    c.execute("insert into ham_word (word, word_count) values('" + word + "', " + str(count) + ")");
+    count = ham_word[word]
+    if spam_word.get(word) == None:
+        c.execute("insert into ham_word (word, word_count) values('" + word + "', " + str(count) + ")");
 
   for word in spam_word:
-    count = spam_word[word]['cnt']
-    c.execute("insert into spam_word (word, word_count) values('" + word + "', " + str(count) + ")");
+    count = spam_word[word]
+    if ham_word.get(word) == None:
+        c.execute("insert into spam_word (word, word_count) values('" + word + "', " + str(count) + ")");
 
   conn.commit()
 
